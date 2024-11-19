@@ -4,6 +4,10 @@
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
+// Migration oluştur
+// npx prisma generate
+// npx prisma db push
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -18,4 +22,145 @@ model Test {
   id      String @id @default(cuid())
   isim    String   // "Şükrü Öğüt"
   sehir   String   // "İstanbul"
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum CategoryType {
+  CUSTOMER_TYPE      // Müşteri tipi kategorileri
+  PHONE_TYPE        // Telefon tipi kategorileri
+  EMAIL_TYPE        // Email tipi kategorileri
+  ADDRESS_TYPE      // Adres tipi kategorileri
+  PERSONNEL_TYPE    // Personel pozisyon kategorileri
+}
+
+model User {
+  id              BigInt      @id @default(autoincrement()) // Tekil tanımlayıcı
+  username        String      @unique                       // Kullanıcı giriş adı
+  password        String                                    // Şifrelenmiş parola
+  namesurname     String                                    // Ad soyad bilgisi
+  role            Role        @default(USER)                // Kullanıcı rolü
+  lastLoginAt     DateTime?                                 // Son giriş zamanı
+  lastLogoutAt    DateTime?                                 // Son çıkış zamanı
+  isLogin         Boolean     @default(false)               // Aktif oturum durumu
+  createdAt       DateTime    @default(now())               // Kayıt oluşturma zamanı
+  updatedAt       DateTime    @updatedAt                    // Son güncelleme zamanı
+  
+  // İlişkiler
+  createdCustomers Customer[] @relation("CustomerCreator")  // Oluşturduğu müşteriler
+  updatedCustomers Customer[] @relation("CustomerUpdater")  // Güncellediği müşteriler
+}
+
+model Category {
+  id          BigInt      @id @default(autoincrement())    // Tekil tanımlayıcı
+  name        String                                       // Kategori adı
+  type        CategoryType                                 // Kategori tipi
+  description String?                                      // Açıklama
+  isActive    Boolean     @default(true)                   // Aktiflik durumu
+  createdAt   DateTime    @default(now())                  // Kayıt oluşturma zamanı
+  updatedAt   DateTime    @updatedAt                       // Son güncelleme zamanı
+
+  // İlişkiler
+  customers   Customer[]                                   // Müşteriler
+  phones      Phone[]                                      // Telefonlar
+  emails      Email[]                                      // Emailler
+  addresses   Address[]                                    // Adresler
+  personnel   Personnel[]                                  // Personeller
+
+  @@unique([name, type])                                   // Aynı tipte tekrar eden isim olmasın
+}
+
+model Customer {
+  id            BigInt      @id @default(autoincrement())  // Tekil tanımlayıcı
+  categoryId    BigInt                                     // Müşteri tipi kategorisi
+  createUserId  BigInt                                     // Kaydı oluşturan kullanıcı
+  updateUserId  BigInt                                     // Son güncelleyen kullanıcı
+  code          String      @unique                        // Müşteri kodu
+  name          String                                     // Müşteri adı
+  taxNumber     String?     @unique                        // Vergi numarası
+  taxOffice     String?                                    // Vergi dairesi
+  identityNo    String?     @unique                        // TC Kimlik no
+  isActive      Boolean     @default(true)                 // Aktiflik durumu
+  createdAt     DateTime    @default(now())                // Kayıt oluşturma zamanı
+  updatedAt     DateTime    @updatedAt                     // Son güncelleme zamanı
+  
+  // İlişkiler
+  category      Category    @relation(fields: [categoryId], references: [id])
+  createUser    User        @relation("CustomerCreator", fields: [createUserId], references: [id])
+  updateUser    User        @relation("CustomerUpdater", fields: [updateUserId], references: [id])
+  phones        Phone[]                                    // Telefon bilgileri
+  emails        Email[]                                    // Email bilgileri
+  addresses     Address[]                                  // Adres bilgileri
+  personnel     Personnel[]                                // Personel bilgileri
+}
+
+model Phone {
+  id          BigInt      @id @default(autoincrement())    // Tekil tanımlayıcı
+  customerId  BigInt                                       // Müşteri referansı
+  categoryId  BigInt                                       // Telefon tipi kategorisi
+  phone       String                                       // Telefon numarası
+  isActive    Boolean     @default(true)                   // Aktiflik durumu
+  createdAt   DateTime    @default(now())                  // Kayıt oluşturma zamanı
+  updatedAt   DateTime    @updatedAt                       // Son güncelleme zamanı
+  
+  // İlişkiler
+  customer    Customer    @relation(fields: [customerId], references: [id])
+  category    Category    @relation(fields: [categoryId], references: [id])
+
+  @@unique([customerId, phone])                            // Aynı müşteriye aynı telefon iki kez eklenmesin
+}
+
+model Email {
+  id          BigInt      @id @default(autoincrement())    // Tekil tanımlayıcı
+  customerId  BigInt                                       // Müşteri referansı
+  categoryId  BigInt                                       // Email tipi kategorisi
+  email       String                                       // Email adresi
+  isActive    Boolean     @default(true)                   // Aktiflik durumu
+  createdAt   DateTime    @default(now())                  // Kayıt oluşturma zamanı
+  updatedAt   DateTime    @updatedAt                       // Son güncelleme zamanı
+  
+  // İlişkiler
+  customer    Customer    @relation(fields: [customerId], references: [id])
+  category    Category    @relation(fields: [categoryId], references: [id])
+
+  @@unique([customerId, email])                            // Aynı müşteriye aynı email iki kez eklenmesin
+}
+
+model Address {
+  id          BigInt      @id @default(autoincrement())    // Tekil tanımlayıcı
+  customerId  BigInt                                       // Müşteri referansı
+  categoryId  BigInt                                       // Adres tipi kategorisi
+  address     String                                       // Adres bilgisi
+  isActive    Boolean     @default(true)                   // Aktiflik durumu
+  createdAt   DateTime    @default(now())                  // Kayıt oluşturma zamanı
+  updatedAt   DateTime    @updatedAt                       // Son güncelleme zamanı
+  
+  // İlişkiler
+  customer    Customer    @relation(fields: [customerId], references: [id])
+  category    Category    @relation(fields: [categoryId], references: [id])
+
+  @@unique([customerId, categoryId])                       // Bir müşterinin aynı tip adresinden birden fazla olmasın
+}
+
+model Personnel {
+  id            BigInt      @id @default(autoincrement())  // Tekil tanımlayıcı
+  customerId    BigInt                                     // Müşteri referansı
+  categoryId    BigInt                                     // Personel pozisyon kategorisi
+  nameSurname   String                                     // Personel adı soyadı
+  phone1        String?                                    // Birinci telefon
+  phone2        String?                                    // İkinci telefon
+  email1        String?                                    // Birinci email
+  email2        String?                                    // İkinci email
+  isActive      Boolean     @default(true)                 // Aktiflik durumu
+  createdAt     DateTime    @default(now())                // Kayıt oluşturma zamanı
+  updatedAt     DateTime    @updatedAt                     // Son güncelleme zamanı
+  
+  // İlişkiler
+  customer      Customer    @relation(fields: [customerId], references: [id])
+  category      Category    @relation(fields: [categoryId], references: [id])
+
+  @@unique([customerId, nameSurname])                      // Aynı müşteride aynı isimde personel olmasın
 }
