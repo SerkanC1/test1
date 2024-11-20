@@ -45,6 +45,7 @@ model User {
   role            Role        @default(USER)                // Kullanıcı rolü
   lastLoginAt     DateTime?                                 // Son giriş zamanı
   lastLogoutAt    DateTime?                                 // Son çıkış zamanı
+  isActive        Boolean     @default(true)                // Kullanıcı çalışıyor mu ayrıldı mı
   isLogin         Boolean     @default(false)               // Aktif oturum durumu
   createdAt       DateTime    @default(now())               // Kayıt oluşturma zamanı
   updatedAt       DateTime    @updatedAt                    // Son güncelleme zamanı

@@ -10,18 +10,25 @@ export async function GET() {
         username: true,
         namesurname: true,
         role: true,
+        createdAt: true,      // Eklendi
+        lastLoginAt: true,    // Eklendi
+        lastLogoutAt: true,   // Eklendi
+        isActive: true,       // Eklendi
+        isLogin: true         // Eklendi
         // password alanını gönderme
       },
     });
 
-    // BigInt'i string'e çevir
+    // BigInt ve tarih serileştirme
     const serializedUsers = users.map((user) => ({
-      ...user,
-      id: user.id.toString(), // BigInt'i string'e dönüştür
-    }));
+        ...user,
+        id: user.id.toString(),
+        createdAt: user.createdAt?.toISOString() || null,
+        lastLoginAt: user.lastLoginAt?.toISOString() || null,
+        lastLogoutAt: user.lastLogoutAt?.toISOString() || null
+      }))
 
-    // serializedUsers'ı döndür, users değil!
-    return NextResponse.json(serializedUsers);
+      return NextResponse.json(serializedUsers);
   } catch (error) {
     console.error("Kullanıcılar getirilemedi:", error);
     return NextResponse.json(

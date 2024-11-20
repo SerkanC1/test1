@@ -21,6 +21,7 @@ export default function UsersPage() {
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchUsers();
@@ -29,12 +30,14 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       const response = await fetch("/api/users");
       if (!response.ok) throw new Error("Kullanıcılar getirilemedi");
       const data = await response.json();
       setUsers(data);
     } catch (error) {
       console.error("Kullanıcılar yüklenemedi:", error);
+      setError("Kullanıcılar yüklenirken bir hata oluştu");
     } finally {
       setIsLoading(false);
     }
@@ -74,7 +77,7 @@ export default function UsersPage() {
   };
 
   // Güvenli tarih formatlama fonksiyonu
-  const formatDate = (date, formatStr) => {
+  const formatDate = (date, formatStr = "dd/MM/yyyy HH:mm:ss") => {
     try {
       if (!date) return "-";
       return format(new Date(date), formatStr, { locale: tr });
@@ -97,6 +100,12 @@ export default function UsersPage() {
 
   return (
     <div className="p-8">
+      {error && (
+        <div className="mb-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500">
+          {error}
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-white">Kullanıcı Yönetimi</h1>
         <button
@@ -137,13 +146,13 @@ export default function UsersPage() {
                     <RoleIndicator isAdmin={user.role === "ADMIN"} />
                   </td>
                   <td className="px-4 py-3 text-sm">
-                    {formatDate(user.createdAt, "dd MMM yyyy")}
+                    {formatDate(user.createdAt)}
                   </td>
                   <td className="px-4 py-3 text-sm">
-                    {formatDate(user.lastLoginAt, "dd MMM HH:mm")}
+                    {formatDate(user.lastLoginAt)}
                   </td>
                   <td className="px-4 py-3 text-sm">
-                    {formatDate(user.lastLogoutAt, "dd MMM HH:mm")}
+                    {formatDate(user.lastLogoutAt)}
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge isActive={user.isActive} />
