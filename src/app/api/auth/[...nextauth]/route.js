@@ -4,6 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 //import { prisma } from "@/app/lib/prisma";
 import { prisma } from '../../../lib/prisma'
+import { getLocalDate } from "../../../lib/date-utils";
 
 if (!process.env.NEXTAUTH_SECRET) {
   throw new Error("NEXTAUTH_SECRET eksik");
@@ -72,6 +73,17 @@ export const authOptions = {
         token.role = user.role;
       }
       return token;
+    },
+    async signIn({ user }) {
+      // Login zamanı ve durumu güncelle
+      await prisma.user.update({
+        where: { id: BigInt(user.id) },
+        data: {
+          lastLoginAt: getLocalDate(),
+          isLogin: true
+        }
+      })
+      return true
     },
     async session({ session, token }) {
       if (token) {

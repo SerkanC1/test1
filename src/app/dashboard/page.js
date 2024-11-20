@@ -1,14 +1,42 @@
 // src/app/dashboard/page.js
 "use client";
 
+import { useEffect } from 'react'
 import { useSession, signOut } from "next-auth/react"; // signOut eklendi
 import { useRouter } from "next/navigation";
-//import LoadingSpinner from '@/app/components/ui/LoadingSpinner'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
+
+  // Sayfa kapatıldığında logout işlemi için useEffect
+  useEffect(() => {
+    const handleBeforeUnload = async () => {
+      if (session?.user?.id) {
+        await fetch('/api/users/logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: session.user.id })
+        })
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [session])
+
+  // Çıkış yap fonksiyonunu güncelle
+  const handleSignOut = async () => {
+    if (session?.user?.id) {
+      await fetch('/api/users/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: session.user.id })
+      })
+    }
+    await signOut({ callbackUrl: "/login" })
+  }
 
   // Loading component with animated gradient
   if (status === 'loading') {
@@ -23,11 +51,7 @@ export default function Dashboard() {
     return null;
   }
 
-  const handleSignOut = async () => {
-    await signOut({ callbackUrl: "/login" });
-  };
-
-  return (
+   return (
     <div className="min-h-screen bg-gray-900">
       <nav className="bg-gray-800 border-b border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
