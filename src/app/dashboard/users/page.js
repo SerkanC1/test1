@@ -21,6 +21,8 @@ export default function UsersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
   const [error, setError] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
 
   useEffect(() => {
     fetchUsers();
@@ -45,6 +47,44 @@ export default function UsersPage() {
   const handleEdit = (user) => {
     setSelectedUser(user);
     setIsModalOpen(true);
+  };
+
+  const handleDelete = async (userId) => {
+    try {
+      const response = await fetch(`/api/users/${userId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Silme işlemi başarısız");
+      }
+
+      await fetchUsers(); // Listeyi güncelle
+    } catch (error) {
+      console.error("Silme hatası:", error);
+    }
+  };
+
+  const confirmDelete = (user) => {
+    setUserToDelete(user);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (userToDelete) {
+      handleDelete(userToDelete.id);
+    }
+    setIsDeleteModalOpen(false);
+  };
+
+  const handleCancelDelete = () => {
+    setUserToDelete(null);
+    setIsDeleteModalOpen(false);
   };
 
   const handleModalClose = () => {
@@ -116,14 +156,11 @@ export default function UsersPage() {
             </thead>
             <tbody>
               {users.map((user) => (
-                <tr
-                  key={user.id}
-                  className="border-t border-gray-700 hover:bg-gray-750"
-                >
+                <tr key={user.id} className="border-t border-gray-700 hover:bg-gray-750">
                   <td className="px-4 py-3">{user.username}</td>
                   <td className="px-4 py-3">{user.namesurname}</td>
                   <td className="px-4 py-3 text-center">
-                    <RoleIndicator isAdmin={user.role === "ADMIN"} />
+                    <RoleIndicator isAdmin={user.role === 'ADMIN'} />
                   </td>
                   <td className="px-4 py-3 text-sm">
                     {formatDate(user.createdAt, "dd/MM/yyyy HH:mm:ss")}
@@ -141,12 +178,20 @@ export default function UsersPage() {
                     <OnlineStatus isOnline={user.isLogin} />
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button
-                      className="text-blue-400 hover:text-blue-300 mr-2"
+                    <button 
+                      className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition duration-200"
                       onClick={() => handleEdit(user)}
                     >
                       Düzenle
                     </button>
+                    {user.role !== 'ADMIN' && (
+                      <button 
+                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition duration-200 ml-2"
+                        onClick={() => confirmDelete(user)}
+                      >
+                        Sil
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -161,6 +206,31 @@ export default function UsersPage() {
           onClose={handleModalClose}
           onSave={handleModalSave}
         />
+      )}
+
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold text-white mb-4">Kullanıcıyı Sil</h2>
+            <p className="text-gray-300 mb-4">
+              {userToDelete?.username} adlı kullanıcıyı silmek istediğinize emin misiniz?
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={handleCancelDelete}
+                className="px-4 py-2 text-gray-300 hover:text-white"
+              >
+                Hayır
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Evet
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

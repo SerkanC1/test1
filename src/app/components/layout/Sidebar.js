@@ -56,7 +56,7 @@ export default function Sidebar() {
       className={`
         fixed top-0 left-0 h-screen bg-gray-800 text-white
         transition-all duration-300 ease-in-out
-        ${isExpanded ? 'w-64' : 'w-16'} // w-20'den w-16'ya değişti
+        ${isExpanded ? "w-64" : "w-16"} // w-20'den w-16'ya değişti
         flex flex-col
         overflow-hidden
       `}
@@ -74,7 +74,7 @@ export default function Sidebar() {
         >
           {/* Logo - her zaman görünür */}
           <Image
-            src="/logo_sembol_160x160.ico"
+            src="/logo_sembol_160x160.png"
             alt="CRM Logo"
             width={32}
             height={32}

@@ -51,3 +51,31 @@ export async function PUT(req, { params }) {
     }, { status: 500 })
   }
 }
+
+export async function DELETE(req, { params }) {
+  try {
+    const { id } = params
+
+    // Admin kullanıcıyı kontrol et
+    const user = await prisma.user.findUnique({
+      where: { id: BigInt(id) },
+      select: { role: true }
+    })
+
+    if (user.role === 'ADMIN') {
+      throw new Error('Admin kullanıcı silinemez')
+    }
+
+    await prisma.user.delete({
+      where: { id: BigInt(id) }
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Silme hatası:', error)
+    return NextResponse.json(
+      { success: false, error: error.message || 'Kullanıcı silinemedi' },
+      { status: 500 }
+    )
+  }
+}
