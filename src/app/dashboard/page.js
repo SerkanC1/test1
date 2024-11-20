@@ -3,6 +3,8 @@
 
 import { useSession, signOut } from "next-auth/react"; // signOut eklendi
 import { useRouter } from "next/navigation";
+//import LoadingSpinner from '@/app/components/ui/LoadingSpinner'
+import LoadingSpinner from '../components/ui/LoadingSpinner'
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
@@ -10,16 +12,7 @@ export default function Dashboard() {
 
   // Loading component with animated gradient
   if (status === 'loading') {
-    return (
-      <div className="flex h-screen w-screen items-center justify-center bg-gray-900">
-        <div className="relative flex items-center justify-center">
-          <div className="absolute -inset-0.5 rounded-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-75 blur animate-pulse"></div>
-          <div className="relative rounded-lg bg-gray-800 px-7 py-4 text-lg font-medium text-white">
-            Yükleniyor...
-          </div>
-        </div>
-      </div>
-    )
+    return <LoadingSpinner />
   }
 
   // Check authentication
