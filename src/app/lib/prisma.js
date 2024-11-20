@@ -1,4 +1,4 @@
-// src/app/lib/prisma.js
+// src/app/lib/prisma.js 
 import { PrismaClient } from '@prisma/client'
 
 // Global scope'da Prisma instance'ı tutmak için
