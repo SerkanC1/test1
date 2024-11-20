@@ -1,11 +1,10 @@
 // src/app/dashboard/users/page.js
 "use client";
 
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
 import UserModal from "./UserModal";
-
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import {
@@ -48,35 +47,16 @@ export default function UsersPage() {
     setIsModalOpen(true);
   };
 
-  const handleCloseModal = () => {
+  const handleModalClose = () => {
     setSelectedUser(null);
     setIsModalOpen(false);
   };
 
-  const handleSave = async (userData) => {
-    try {
-      const url = selectedUser ? `/api/users/${selectedUser.id}` : "/api/users";
-
-      const method = selectedUser ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(userData),
-      });
-
-      if (!response.ok) throw new Error("İşlem başarısız");
-
-      fetchUsers(); // Listeyi yenile
-      handleCloseModal();
-    } catch (error) {
-      console.error("Kullanıcı kaydedilemedi:", error);
-    }
+  const handleModalSave = async () => {
+    await fetchUsers(); // Liste güncelleme
+    handleModalClose(); // Modal kapatma
   };
 
-  // Güvenli tarih formatlama fonksiyonu
   const formatDate = (date, formatStr = "dd/MM/yyyy HH:mm:ss") => {
     try {
       if (!date) return "-";
@@ -88,6 +68,7 @@ export default function UsersPage() {
   };
 
   if (!session) return null;
+
   if (session?.user?.role !== "ADMIN") {
     return (
       <div className="p-4">
@@ -105,7 +86,6 @@ export default function UsersPage() {
           {error}
         </div>
       )}
-
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-white">Kullanıcı Yönetimi</h1>
         <button
@@ -142,27 +122,27 @@ export default function UsersPage() {
                 >
                   <td className="px-4 py-3">{user.username}</td>
                   <td className="px-4 py-3">{user.namesurname}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 text-center">
                     <RoleIndicator isAdmin={user.role === "ADMIN"} />
                   </td>
                   <td className="px-4 py-3 text-sm">
-                    {formatDate(user.createdAt)}
+                    {formatDate(user.createdAt, "dd/MM/yyyy HH:mm:ss")}
                   </td>
                   <td className="px-4 py-3 text-sm">
-                    {formatDate(user.lastLoginAt)}
+                    {formatDate(user.lastLoginAt, "dd/MM/yyyy HH:mm:ss")}
                   </td>
                   <td className="px-4 py-3 text-sm">
-                    {formatDate(user.lastLogoutAt)}
+                    {formatDate(user.lastLogoutAt, "dd/MM/yyyy HH:mm:ss")}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 text-center">
                     <StatusBadge isActive={user.isActive} />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 text-center">
                     <OnlineStatus isOnline={user.isLogin} />
                   </td>
                   <td className="px-4 py-3 text-right">
                     <button
-                      className="text-blue-400 hover:text-blue-300"
+                      className="text-blue-400 hover:text-blue-300 mr-2"
                       onClick={() => handleEdit(user)}
                     >
                       Düzenle
@@ -178,8 +158,8 @@ export default function UsersPage() {
       {isModalOpen && (
         <UserModal
           user={selectedUser}
-          onClose={handleCloseModal}
-          onSave={handleSave}
+          onClose={handleModalClose}
+          onSave={handleModalSave}
         />
       )}
     </div>
