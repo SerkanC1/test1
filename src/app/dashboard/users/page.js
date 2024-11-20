@@ -1,81 +1,98 @@
 // src/app/dashboard/users/page.js
-'use client'
+"use client";
 
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { useState, useEffect } from 'react'
-import UserModal from './UserModal'
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import UserModal from "./UserModal";
+
+import { format } from "date-fns";
+import { tr } from "date-fns/locale";
+import {
+  RoleIndicator,
+  StatusBadge,
+  OnlineStatus,
+} from "../../components/ui/StatusIndicator";
 
 export default function UsersPage() {
-  const { data: session } = useSession()
-  const router = useRouter()
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [users, setUsers] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [selectedUser, setSelectedUser] = useState(null)
+  const { data: session } = useSession();
+  const router = useRouter();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   useEffect(() => {
-    fetchUsers()
-  }, [])
+    fetchUsers();
+  }, []);
 
   const fetchUsers = async () => {
     try {
-      setIsLoading(true)
-      const response = await fetch('/api/users')
-      if (!response.ok) throw new Error('Kullanıcılar getirilemedi')
-      const data = await response.json()
-      setUsers(data)
+      setIsLoading(true);
+      const response = await fetch("/api/users");
+      if (!response.ok) throw new Error("Kullanıcılar getirilemedi");
+      const data = await response.json();
+      setUsers(data);
     } catch (error) {
-      console.error('Kullanıcılar yüklenemedi:', error)
+      console.error("Kullanıcılar yüklenemedi:", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleEdit = (user) => {
-    setSelectedUser(user)
-    setIsModalOpen(true)
-  }
+    setSelectedUser(user);
+    setIsModalOpen(true);
+  };
 
   const handleCloseModal = () => {
-    setSelectedUser(null)
-    setIsModalOpen(false)
-  }
+    setSelectedUser(null);
+    setIsModalOpen(false);
+  };
 
   const handleSave = async (userData) => {
     try {
-      const url = selectedUser 
-        ? `/api/users/${selectedUser.id}` 
-        : '/api/users'
-      
-      const method = selectedUser ? 'PUT' : 'POST'
-      
+      const url = selectedUser ? `/api/users/${selectedUser.id}` : "/api/users";
+
+      const method = selectedUser ? "PUT" : "POST";
+
       const response = await fetch(url, {
         method,
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(userData),
-      })
+      });
 
-      if (!response.ok) throw new Error('İşlem başarısız')
-      
-      fetchUsers() // Listeyi yenile
-      handleCloseModal()
+      if (!response.ok) throw new Error("İşlem başarısız");
+
+      fetchUsers(); // Listeyi yenile
+      handleCloseModal();
     } catch (error) {
-      console.error('Kullanıcı kaydedilemedi:', error)
+      console.error("Kullanıcı kaydedilemedi:", error);
     }
-  }
+  };
 
-  if (!session) return null
-  if (session?.user?.role !== 'ADMIN') {
+  // Güvenli tarih formatlama fonksiyonu
+  const formatDate = (date, formatStr) => {
+    try {
+      if (!date) return "-";
+      return format(new Date(date), formatStr, { locale: tr });
+    } catch (error) {
+      console.error("Tarih formatlanırken hata:", error);
+      return "-";
+    }
+  };
+
+  if (!session) return null;
+  if (session?.user?.role !== "ADMIN") {
     return (
       <div className="p-4">
         <div className="bg-red-500 text-white p-4 rounded">
           Bu sayfaya erişim yetkiniz yok.
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -99,19 +116,44 @@ export default function UsersPage() {
               <tr>
                 <th className="px-4 py-3 text-left">Kullanıcı Adı</th>
                 <th className="px-4 py-3 text-left">Ad Soyad</th>
-                <th className="px-4 py-3 text-left">Rol</th>
-                <th className="px-4 py-3 text-left">İşlemler</th>
+                <th className="px-4 py-3 text-center w-20">Rol</th>
+                <th className="px-4 py-3 text-left">Kayıt Tarihi</th>
+                <th className="px-4 py-3 text-left">Son Giriş</th>
+                <th className="px-4 py-3 text-left">Son Çıkış</th>
+                <th className="px-4 py-3 text-center w-16">Durum</th>
+                <th className="px-4 py-3 text-center w-16">Online</th>
+                <th className="px-4 py-3 text-right">İşlemler</th>
               </tr>
             </thead>
             <tbody>
               {users.map((user) => (
-                <tr key={user.id} className="border-t border-gray-700 hover:bg-gray-750">
+                <tr
+                  key={user.id}
+                  className="border-t border-gray-700 hover:bg-gray-750"
+                >
                   <td className="px-4 py-3">{user.username}</td>
                   <td className="px-4 py-3">{user.namesurname}</td>
-                  <td className="px-4 py-3">{user.role}</td>
                   <td className="px-4 py-3">
-                    <button 
-                      className="text-blue-400 hover:text-blue-300 mr-2"
+                    <RoleIndicator isAdmin={user.role === "ADMIN"} />
+                  </td>
+                  <td className="px-4 py-3 text-sm">
+                    {formatDate(user.createdAt, "dd MMM yyyy")}
+                  </td>
+                  <td className="px-4 py-3 text-sm">
+                    {formatDate(user.lastLoginAt, "dd MMM HH:mm")}
+                  </td>
+                  <td className="px-4 py-3 text-sm">
+                    {formatDate(user.lastLogoutAt, "dd MMM HH:mm")}
+                  </td>
+                  <td className="px-4 py-3">
+                    <StatusBadge isActive={user.isActive} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <OnlineStatus isOnline={user.isLogin} />
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      className="text-blue-400 hover:text-blue-300"
                       onClick={() => handleEdit(user)}
                     >
                       Düzenle
@@ -132,5 +174,5 @@ export default function UsersPage() {
         />
       )}
     </div>
-  )
+  );
 }
